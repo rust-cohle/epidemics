@@ -1,0 +1,224 @@
+<app-page-title [title]="'Mathematics'"></app-page-title>
+
+<mat-tab-group id="mathematics-tabs">
+    <mat-tab label="Matrix">
+        <ng-container [ngTemplateOutlet]="matrix"></ng-container>
+    </mat-tab>
+    <mat-tab label="Collisions">
+        <ng-container [ngTemplateOutlet]="collisions"></ng-container>
+    </mat-tab>
+    <mat-tab label="Rotations">
+        <ng-container [ngTemplateOutlet]="rotations"></ng-container>
+    </mat-tab>
+    <mat-tab label="Geometry">
+        <ng-container [ngTemplateOutlet]="geometry"></ng-container>
+    </mat-tab>
+</mat-tab-group>
+
+<ng-template #matrix>
+    <div [tex]="matrix1"></div>
+    <div [tex]="matrix2"></div>
+    <div [tex]="matrix3"></div>
+    <div [tex]="matrix4"></div>
+    <div [tex]="matrix5"></div>
+    <div [tex]="determinantEquality"></div>
+</ng-template>
+
+<ng-template #collisions>
+    <h2>One dimension elastic collision</h2>
+    Conservation of momentum:
+    <div [tex]="'\\sum_{i} \\mathbf{\\dot{p_i}} = 0'"></div>
+
+    Conservation of energy:
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-8" [tex]="'E = E_c + E_p = cst'"></div>
+            <div class="col-4">
+                Conservation of mechanical energy
+            </div>
+        </div>
+        <div class="row align-items-center">
+            <div class="col-8"
+                [tex]="'E_p = E_p\''"
+               ></div>
+            <div class="col-4">
+                Potential energy is conserved in an elastic collision
+            </div>
+        </div>
+        <div class="row align-items-center">
+            <div class="col-8"
+                [tex]="'E_c = E_c\''"
+               ></div>
+            <div class="col-4">
+                Therefore kinetic energy is conserved during collision
+            </div>
+        </div>
+    </div>
+    
+    Applied to two balls with given mass and initial speed:
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-8" [tex]="'m_1 v_1 + m_2 v_2 = m_1 v_1\' + m_2 v_2\''"></div>
+            <div class="col-4">
+                Projected on (Ox) axis. System's momentum is conserved before and after the collision
+            </div>
+        </div>
+        <div class="row align-items-center">
+            <div class="col-8" [tex]="'\\frac{1}{2} m_1 v_1^2 + \\frac{1}{2} m_2 v_2^2 = \\frac{1}{2} m_1 v_1\'^2 + \\frac{1}{2} m_2 v_2\'^2'"></div>
+            <div class="col-4">
+                System's kinetic energy is conserved before and after the collision
+            </div>
+        </div>
+    </div>
+
+    Yields:
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-8" [tex]="'(\\mu+1) m_2 v_2\'^2 - 2 m_2 (v_1 + \\mu v_2) v_2\' + v_2 (\\mu m_1 [2 v_1 + \\mu v_2] - m_2 v_2) = 0'"></div>
+            <div class="col-4 d-flex align-items-center">
+                <div class="mr-1">with</div>
+                <div [tex]="'\\mu = \\frac{m_2}{m_1}'" [inline]="true"></div>
+            </div>
+        </div>
+    </div>
+
+    Solving the 2nd order polynomial:
+    <div class="container">    
+        <div class="row align-items-center">
+            <div class="col-8"
+                [tex]="'\\Delta = 4 m_2^2 (v_2 - v_1)^2'">
+            </div>
+            <div class="col-4"></div>
+        </div>
+        <div class="row align-items-center">
+            <div class="col-8"
+                [tex]="'v_2\' = v_2'">
+            </div>
+            <div class="col-4">Solution 1, trivially matching the conservation equations</div>
+        </div>
+        <div class="row align-items-center">
+            <div class="col-8"
+                [tex]="'v_2\' = \\frac{2 m_1}{m_1 + m_2} v_1 + \\frac{m_2 - m_1}{m_1 + m_2} v_2'">
+            </div>
+            <div class="col-4">Solution 2 of polynomial is the sought result</div>
+        </div>
+    </div>
+
+    Finally:
+    <div class="container result mb-2">
+        <div class="row align-items-center">
+            <div class="col-8" [tex]="'v_1\' = \\frac{2 m_2}{m_1 + m_2} v_2 + \\frac{m_1 - m_2}{m_1 + m_2} v_1'">
+            </div>
+            <div class="col-4">Obtained per analogy with above resolution</div>
+        </div>
+        <div class="row align-items-center">
+            <div class="col-8" [tex]="'v_2\' = \\frac{2 m_1}{m_1 + m_2} v_1 + \\frac{m_2 - m_1}{m_1 + m_2} v_2'">
+            </div>
+            <div class="col-4"></div>
+        </div>
+    </div>
+    
+    <!-- <div [tex]="'\\sum{i} \\dot{p_i} = 0'"></div> -->
+</ng-template>
+
+<ng-template #rotations>
+    <h2>2D rotation</h2>
+    In orthonormal base <span [tex]="'(e_x,e_y)'" [inline]="true"></span>:
+    <div [tex]="'R(\\theta) = ' + rotation2DMatrix"></div>
+    <div [tex]="'X(\\theta) = R(\\theta) X'"></div>
+    
+    For instance, rotating <span [tex]="rotatedVector.toTex()" [inline]="true"></span> with <span [tex]="'\\theta = \\frac{\\pi}{4}'" [inline]="true"></span>:
+    <div [tex]="rotation2DEquality"></div>
+
+    <h2>3D rotation</h2>
+    In orthonormal base <span [tex]="'(e_x,e_y,e_z)'" [inline]="true"></span>, around <span [tex]="'e_z'" [inline]="true"></span> axis:
+    <div [tex]="'R(\\theta) = ' + rotation3DMatrix"></div>
+</ng-template>
+
+<ng-template #geometry>
+    <h2>2D intersection of lines</h2>
+    Given two lines <span [tex]="'(L_1)'" [inline]="true"></span> and <span [tex]="'(L_2)'" [inline]="true"></span>, defined by:
+    <div class="container mb-2">
+        <div class="row align-items-center">
+            <div class="col-8" [tex]="line1_system1">
+            </div>
+            <div class="col-4"></div>
+        </div>
+        <div class="row align-items-center">
+            <div class="col-8" [tex]="line2_system1">
+            </div>
+            <div class="col-4"></div>
+        </div>
+    </div>
+    We have <span [tex]="'\\bigl\\{ \\mathbf{P} = (x, y) \\in \\\mathbb{R^2} / \\mathbf{P} \\in (L_i) \\bigr\\}'" [inline]="true"></span> described by:
+    <div class="container mb-2">
+        <div class="row align-items-center">
+            <div class="col-8" [tex]="line1_system2">
+            </div>
+            <div class="col-4">for <span [tex]="'(L_1)'" [inline]="true"></span></div>
+        </div>
+        <div class="row align-items-center">
+            <div class="col-8" [tex]="line2_system2">
+            </div>
+            <div class="col-4">for <span [tex]="'(L_2)'" [inline]="true"></span></div>
+        </div>
+    </div>
+    If there exists <span [tex]="'\\mathbf{P_I} = (x_I, y_I)'" [inline]="true"></span> that belongs to both <span [tex]="'(L_2)'" [inline]="true"></span> and <span [tex]="'(L_2)'" [inline]="true"></span>, there will be a unique couple <span [tex]="'(t_1, t_2)'" [inline]="true"></span> so that:
+    <div class="container mb-2">
+        <div class="row align-items-center">
+            <div class="col-8" [tex]="line1_system3">
+            </div>
+            <div class="col-4">since <span [tex]="'\\mathbf{P_I} \\in (L_1)'" [inline]="true"></span></div>
+        </div>
+        <div class="row align-items-center">
+            <div class="col-8" [tex]="line2_system3">
+            </div>
+            <div class="col-4">since <span [tex]="'\\mathbf{P_I} \\in (L_2)'" [inline]="true"></span></div>
+        </div>
+    </div>
+    Thus:
+    <div class="container mb-2">
+        <div class="row align-items-center">
+            <div class="col-8" [tex]="intersection_system1">
+            </div>
+            <div class="col-4"></div>
+        </div>
+        <div class="row align-items-center">
+            <div class="col-8" [tex]="intersection_system2">
+            </div>
+            <div class="col-4">with <span [tex]="'\\Delta x = x_2 - x_1'" [inline]="true"></span> and <span [tex]="'\\Delta y = y_2 - y_1'" [inline]="true"></span></div>
+        </div>
+        <div class="row align-items-center">
+            <div class="col-8" [tex]="intersection_system3">
+            </div>
+            <div class="col-4">assuming respectively <span [tex]="'a_1 \\neq 0, b_1 \\neq 0'" [inline]="true"></span> and <span [tex]="'a_2 \\neq 0, b_2 \\neq 0'" [inline]="true"></span></div>
+        </div>
+    </div>
+    We can therefore obtain <span [tex]="'t_1'" [inline]="true"></span> or <span [tex]="'t_2'" [inline]="true"></span>:
+    <div class="container mb-2">
+        <div class="row align-items-center">
+            <div class="col-8" [tex]="intersection_system4">
+            </div>
+            <div class="col-4">assuming <span [tex]="'a_2 \\neq 0, b_2 \\neq 0'" [inline]="true"></span> and <span [tex]="'a_1 b_2 \\neq a_2 b_1'" [inline]="true"></span></div>
+        </div>
+    </div>
+    or
+    <div class="container mb-2">
+        <div class="row align-items-center">
+            <div class="col-8" [tex]="intersection_system5">
+            </div>
+            <div class="col-4">assuming <span [tex]="'a_1 \\neq 0, b_1 \\neq 0'" [inline]="true"></span> and <span [tex]="'a_1 b_2 \\neq a_2 b_1'" [inline]="true"></span></div>
+        </div>
+    </div>
+    Under those conditions, we finally compute <span [tex]="'\\mathbf{P_I}'" [inline]="true"></span> coordinates <span [tex]="'(x_I,y_I)'" [inline]="true"></span>:
+    <div class="container result mb-2">
+        <div class="row align-items-center">
+            <div class="col-8" [tex]="intersection_result_x"></div>
+            <div class="col-4"></div>
+        </div>
+        <div class="row align-items-center">
+            <div class="col-8" [tex]="intersection_result_y"></div>
+            <div class="col-4"></div>
+        </div>
+    </div>
+</ng-template>

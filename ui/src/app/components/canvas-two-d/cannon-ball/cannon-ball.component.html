@@ -1,0 +1,52 @@
+<div class="container">
+    <div class="row">
+        <div class="d-flex justify-content-between w-100 pb-1">
+            <div class="d-flex justify-content-between w-100">
+                <p>2D real-time physics animations on a canvas</p>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col d-flex flex-column">
+                    <div class="d-flex align-items-center">
+                        <div class="mr-1">Gravity</div>
+                        <mat-slider class="mr-1" min="0" max="50" step="0.5" [value]="gravity" (change)="onGravityChange($event)"></mat-slider>
+                        {{ gravity }}
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <div class="mr-1">Elasticity X</div>
+                        <mat-slider class="mr-1" min="0" max="1" step="0.05" [value]="elasticityX" (change)="onElasticityXChange($event)"></mat-slider>
+                        {{ elasticityX }}
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <div class="mr-1">Elasticity Y</div>
+                        <mat-slider class="mr-1" min="0" max="1" step="0.05" [value]="elasticityY" (change)="onElasticityYChange($event)"></mat-slider>
+                        {{ elasticityY }}
+                    </div>
+                </div>
+                <div class="col d-flex justify-content-end">
+                    <div class="d-flex flex-column align-items-end">
+                        <mat-radio-group [formControl]="runnerType" aria-label="Select an option">
+                            <mat-radio-button value="live" class="mr-2">Live</mat-radio-button>
+                            <mat-radio-button value="precompute">Precompute</mat-radio-button>
+                        </mat-radio-group>
+                        <div class="d-flex">
+                            <button class="btn btn-sm btn-primary mr-2" (click)="toggleAnimation()">
+                                {{ runner?.animationPlaying ? 'Pause' : 'Resume' }}
+                            </button>
+                            <button class="btn btn-sm btn-warning" (click)="startAnimation()">Restart</button>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+    <div #canvasParent id="canvas-parent" class="row">
+        <div class="d-flex justify-content-center w-100">
+            <canvas #canvas2D id="canvas-2d" width="1000" height="500"></canvas>
+        </div>
+    </div>
+</div>

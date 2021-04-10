@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "module": "commonjs",
+    "declaration": true,
+    "sourceMap": true, 
+    "outDir": "./dist",
+    "strict": true,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "moduleResolution": "node",
+    "baseUrl": "./",
+    "paths": {
+      "@epidemics/engine": [
+        "../engine/dist"
+      ]
+    },
+    "typeRoots": [
+      "node_modules/@types"
+    ],
+    "esModuleInterop": true,
+    "sourceRoot": "./src",
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "watchOptions": {
+    "watchFile": "useFsEvents",
+    "watchDirectory": "useFsEvents",
+    "fallbackPolling": "dynamicPriority"
+  },
+  "include": [
+    "src",
+    "resources/**/*.json"
+  ]
+}

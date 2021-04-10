@@ -1,0 +1,36 @@
+<div class="container">
+    <div class="row">
+        <div class="d-flex justify-content-between w-100 pb-1">
+            <div class="d-flex justify-content-between w-100">
+                <p>Basic simulation of an epidemics</p>
+            </div>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col d-flex flex-column">
+                    Actions
+                </div>
+                <div class="col d-flex justify-content-end">
+                    <div class="d-flex flex-column align-items-end">
+                        <div class="d-flex">
+                            <button class="btn btn-sm btn-primary mr-2" (click)="toggleAnimation()">
+                                {{ runner?.animationPlaying ? 'Pause' : 'Resume' }}
+                            </button>
+                            <button class="btn btn-sm btn-warning" (click)="simulate()">Simulate</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mb-3" *ngIf="isComputing">
+        <mat-progress-bar mode="determinate" [value]="progress.progression.percent"></mat-progress-bar>
+    </div>
+    <div #canvasParent id="canvas-parent" class="row">
+        <div class="d-flex justify-content-center w-100">
+            <canvas #canvas2D id="canvas-2d" width="1000" height="500"></canvas>
+        </div>
+    </div>
+</div>
