@@ -4,7 +4,8 @@ export enum ComputationEvent {
     Start = "Start",
     Progressing = "Progressing",
     Complete = "Complete",
-    NotStarted = "NotStarted"
+    NotStarted = "NotStarted",
+    Failed = "Failed"
 }
 
 export interface IComputationProgress {

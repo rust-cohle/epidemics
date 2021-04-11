@@ -4,6 +4,7 @@ import { ISpaceTimeRecord, WorldConfig } from '@epidemics/engine';
 import { Observable } from 'rxjs';
 import * as io from 'socket.io-client';
 import { ReplayRunnerStartConfig } from '../../runner/runner.interface';
+import { ResourceCreated } from '../rest/rest.service';
 import { SocketConfig, SOCKET_CONFIG } from './socket.token';
 
 export enum ComputationEvent {
@@ -59,7 +60,7 @@ export class SocketService {
     });
   }
   
-  computationProgress$(): Observable<IComputationProgressEvent<ISpaceTimeRecord>> {
+  computationProgress$(): Observable<IComputationProgressEvent<ISpaceTimeRecord | ResourceCreated>> {
     return new Observable((observer) => {
       this.socket.on("computationProgressEvent", (event: any) => {
         if (typeof event === "string") {

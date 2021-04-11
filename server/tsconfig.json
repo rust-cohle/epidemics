@@ -31,5 +31,8 @@
   "include": [
     "src",
     "resources/**/*.json"
+  ],
+  "exclude": [
+    "resources/storage/**/*"
   ]
 }

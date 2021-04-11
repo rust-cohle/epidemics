@@ -77,7 +77,7 @@ export class SimulationComponent implements OnInit, AfterViewInit {
 
     this.remoteRunner.startAnimation({
       fps: 20,
-      duration: 500, // duration in unit time
+      duration: 100, // duration in unit time
       unitInMs: 1000, // unit is one hour
     });
   }

@@ -3,5 +3,10 @@
         "target": "http://localhost:3333",
         "secure": false,
         "logLevel": "debug"
+    },
+    "/api/*": {
+        "target": "http://localhost:3334/api",
+        "secure": false,
+        "logLevel": "debug"
     }
 }

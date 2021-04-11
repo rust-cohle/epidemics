@@ -1,23 +1,23 @@
-import { ISpaceTimeRecord } from "@epidemics/engine";
 import * as http from "http";
-import { Server } from "http";
-import { interval } from "rxjs";
 import { Server as IoServer, Socket } from "socket.io";
-import { generateGraph } from "../python-connectors";
+import { ISpaceTimeRecord } from "@epidemics/engine";
+import { interval } from "rxjs";
+import { EphemeralStorageService } from "../storage";
 import { ComputationEvent, IComputationProgressEvent } from "../simulators/common/computation-event";
 import { forkEpidemicsProcess$ } from "../simulators/epidemics/epidemics-precompute";
+import { ResourceCreated } from "../storage/common/resource";
+import { ClientsService } from "src/clients/clients.service";
 
 const constants = {
     MAX_CONCCURRENT_COMPUTATIONS: 4,
     MAX_PER_CLIENT_COMPUTATIONS: 1,
     MAX_FAILED_ATTEMPTS: 5,
     CLEAR_ATTEMPTS_INTERVAL: 1000 * 60, // one minute
-    CHECK_UNBAN_USERS_INTERVAL: 1000 * 60, // one minute
-    BAN_DURATION: 1000*60*60 // one hour
 }
 
 export interface ISocketConfig {
-    port: number
+    port: number,
+    dependencies: [EphemeralStorageService, ClientsService]
 }
 
 export interface FailedAttempts {
@@ -36,56 +36,30 @@ export interface Computations {
 }
 
 export class SocketService {
-    private httpServer: Server;
-
+    // WebSocket server
     private socketServer: IoServer;
-
+    
     private sockets: Socket[] = [];
-
-    private bannedClients: {ip: string, start: number}[] = [];
+    
+    private ephemeralStorage: EphemeralStorageService;
+    
+    private clientsManager: ClientsService;
 
     private computations: Computations = {
         total: 0,
         perClient: {}
     }
 
-    constructor(private config: ISocketConfig) {
-        // Refresh the clients computation attempts periodically
-        interval(constants.CLEAR_ATTEMPTS_INTERVAL).subscribe(() => {
-            for (const clientId in this.computations.perClient) {
-                if (!this.computations.perClient.hasOwnProperty(clientId)) {
-                    continue;
-                }
-
-                const clientData = this.computations.perClient[clientId];
-                if (!clientData.failedAttempts) {
-                    continue;
-                }
-
-                clientData.failedAttempts = {
-                    count: 0,
-                    firstAttemptTime: null
-                }
-            }
-        });
-
-        interval(constants.CHECK_UNBAN_USERS_INTERVAL).subscribe(() => {
-            this.bannedClients = this.bannedClients
-                .filter(bannedClient => {
-                    if ((bannedClient.start + constants.BAN_DURATION) <= Date.now()) {
-                        console.log(`[Socket] [Ban] Unbanning client with IP ${bannedClient.ip}`);
-                        return false;
-                    }
-
-                    // Client stays banned
-                    return true;
-                });
-        });
+    constructor(private socketConfig: ISocketConfig) {
+        this.cleanupClientData();
+        const [ephemeralStorage, clientsManager] = socketConfig.dependencies;
+        this.ephemeralStorage = ephemeralStorage;
+        this.clientsManager = clientsManager;
     }
 
     init(): void {
-        this.httpServer = http.createServer();
-        this.socketServer = new IoServer(this.httpServer, {
+        const httpServer = http.createServer();
+        this.socketServer = new IoServer(httpServer, {
             cors: {
                 origin: true,
                 credentials: true,
@@ -96,15 +70,14 @@ export class SocketService {
         });
 
         this.socketServer.on("connection", this.onClientConnection.bind(this));
-        
 
-        const port = this.config.port;
-        this.httpServer.listen(port, () => console.log(`[Socket] Server listening at ${port}`));
+        const port = this.socketConfig.port;
+        httpServer.listen(port, () => console.log(`[Socket] Server listening at ${port}`));
     }
 
     onClientConnection(socket: Socket): void {
         const clientIp = socket.handshake.address;
-        if (this.bannedClients.some(bannedClient => bannedClient.ip === socket.handshake.address)) {
+        if (this.clientsManager.isBanned(socket.handshake.address)) {
             console.warn(`[Server] [Connection] Client ${clientIp} attempted to connect but is banned.`);
             socket.emit("connectionEvent", {
                 connected: false,
@@ -149,7 +122,12 @@ export class SocketService {
                 computing: false,
                 reason: "You've made too many computation requests. You'll be banned for a while."
             });
-            this.banClient(clientIp);
+            this.clientsManager.banClient(clientIp);
+            // Find all sockets that have this client IP and disconnect them
+            const targets = this.sockets.filter(socket => socket.handshake.address === clientIp);
+            targets.forEach(socket => {
+                socket.disconnect();
+            });
             return;
         }
 
@@ -193,9 +171,8 @@ export class SocketService {
         perClientComputations.onGoing += 1;
 
         forkEpidemicsProcess$(data).subscribe(async (computationEvent: IComputationProgressEvent<ISpaceTimeRecord>) => {
-            socket.emit("computationProgressEvent", JSON.stringify(computationEvent));
-
             if(computationEvent.type === ComputationEvent.Progressing) {
+                socket.emit("computationProgressEvent", JSON.stringify(computationEvent));
                 try {
                     // const graphPath = await generateGraph(computationEvent.progress.epidemics.counts.current);
                     // console.log(graphPath);
@@ -205,26 +182,58 @@ export class SocketService {
             }
 
             if(computationEvent.type === ComputationEvent.Complete) {
+                const payload = computationEvent.payload;
+                
+                let resource: ResourceCreated;
+                try {
+                    resource = await this.ephemeralStorage.createResource(JSON.stringify(payload), "application/json");
+                } catch(err) {
+                    console.error(err);
+                    perClientComputations.onGoing -= 1;
+                    this.computations.total -= 1;
+                    return;
+                }
+
+                if (!resource.created) {
+                    socket.emit("computationProgressEvent", {
+                        type: ComputationEvent.Failed
+                    });
+                    perClientComputations.onGoing -= 1;
+                    this.computations.total -= 1;
+                    return;
+                }
+
+                const resourceComputedEvent: IComputationProgressEvent<ResourceCreated> = {
+                    type: ComputationEvent.Complete,
+                    payload: resource
+                };
+    
+                socket.emit("computationProgressEvent", resourceComputedEvent);
+
                 perClientComputations.onGoing -= 1;
                 this.computations.total -= 1;
             }
         });
     }
 
-    private banClient(clientIp: string) {
-        console.log(`[Socket] [Ban] Banning client with IP ${clientIp} for ${constants.BAN_DURATION/1000}s.`);
+    private cleanupClientData() {
+        // Refresh the clients computation attempts periodically
+        interval(constants.CLEAR_ATTEMPTS_INTERVAL).subscribe(() => {
+            for (const clientId in this.computations.perClient) {
+                if (!this.computations.perClient.hasOwnProperty(clientId)) {
+                    continue;
+                }
 
-        // Store this IP to prevent it from reconnecting
-        this.bannedClients.push({
-            ip: clientIp,
-            start: Date.now()
+                const clientData = this.computations.perClient[clientId];
+                if (!clientData.failedAttempts) {
+                    continue;
+                }
+
+                clientData.failedAttempts = {
+                    count: 0,
+                    firstAttemptTime: null
+                }
+            }
         });
-        
-        // Find all sockets that have this client IP and disconnect them
-        const targets = this.sockets.filter(socket => socket.handshake.address === clientIp);
-        targets.forEach(socket => {
-            socket.disconnect();
-        });
-    
     }
 }
