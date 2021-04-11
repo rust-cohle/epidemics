@@ -40,9 +40,14 @@ export class ApiService {
                 contentType: "application/json"
             });
 
+            if(!fetchable.found || !fetchable.readStream) {
+                throw new Error("Resource not found.");
+            }
+
             res.status(200);
             res.setHeader("Content-Type", "application/json");
-            fetchable.resource.pipe(res);
+            res.setHeader("Content-Length", fetchable.length);
+            fetchable.readStream.pipe(res);
             return;
         } catch(err) {
             console.error(`[API] [GET resource ${req.params.uuid}] ${err}`);
@@ -53,7 +58,7 @@ export class ApiService {
     private headersMiddleware(req: express.Request, res: express.Response, next: express.NextFunction): void {
         res.setHeader("Access-Control-Allow-Origin", "*");
         res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS");
-        res.setHeader("Access-Control-Allow-Headers", "Origin, Content-Type");
+        res.setHeader("Access-Control-Allow-Headers", "Origin, Content-Type, Content-Length");
 
         next();
     }

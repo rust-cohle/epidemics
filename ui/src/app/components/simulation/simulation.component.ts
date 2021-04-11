@@ -1,12 +1,13 @@
 import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { MatSliderChange } from '@angular/material/slider';
-import { EARTH_GRAVITY, EpidemicsWorldConfig, generateEpidemicsWorld, ISpaceTimeRecord } from '@epidemics/engine';
+import { EARTH_GRAVITY, ISpaceTimeRecord } from '@epidemics/engine';
 import { Subscription } from 'rxjs';
 import { ComputationEvent, IComputationProgressEvent, IComputationProgress, SocketService } from '../../services/io/socket/socket.service';
 import { RemoteReplayRunnerService } from 'src/app/services/runner/remote-replay-runner.service';
 import { CanvasDrawingService } from '../../services/drawing/canvas-drawing.service';
 import { ICanvasRunner } from '../../services/runner/runner.interface';
+import { HttpEvent, HttpEventType, HttpHeaderResponse, HttpProgressEvent } from '@angular/common/http';
 
 @Component({
   selector: 'app-simulation',
@@ -33,7 +34,13 @@ export class SimulationComponent implements OnInit, AfterViewInit {
 
   isComputing: boolean = false;
 
-  progress: IComputationProgress = null;
+  isDownloading: boolean = false;
+
+  computationProgress: IComputationProgress = null;
+
+  downloadProgress: number = 0;
+  downloadedSize: number = 0;
+  downloadSize: number = 0;
 
   private subscriptions: Subscription[] = [];
 
@@ -49,7 +56,10 @@ export class SimulationComponent implements OnInit, AfterViewInit {
     const latestComputationSub = this.socketService.computationProgress$()
       .subscribe(this.updateComputationState.bind(this));
 
-    this.subscriptions.push(latestComputationSub);
+    const downloadSub = this.remoteRunner.downloadProgress$()
+      .subscribe(event => this.updateDownloadState(event));
+
+    this.subscriptions.push(latestComputationSub, downloadSub);
   }
 
   ngAfterViewInit(): void {
@@ -72,7 +82,7 @@ export class SimulationComponent implements OnInit, AfterViewInit {
     this.remoteRunner.initialize({
       width: this.canvas2D.width,
       height: this.canvas2D.height,
-      numberOfPersons: 10
+      numberOfPersons: 100
     });
 
     this.remoteRunner.startAnimation({
@@ -83,7 +93,7 @@ export class SimulationComponent implements OnInit, AfterViewInit {
   }
 
   updateComputationState(event: IComputationProgressEvent<ISpaceTimeRecord>): void {
-    this.progress = null;
+    this.computationProgress = null;
     
     if(!event) {
       return;
@@ -91,7 +101,21 @@ export class SimulationComponent implements OnInit, AfterViewInit {
 
     this.isComputing = event.type === ComputationEvent.Progressing;
     if(this.isComputing) {
-      this.progress = event.progress;
+      this.computationProgress = event.progress;
+    }
+  }
+
+  updateDownloadState(event: HttpEvent<any>): void {
+    if(!event) {
+      return;
+    }
+
+    this.isDownloading = event.type === HttpEventType.DownloadProgress;
+    if(this.isDownloading) {
+      const progressEvent: HttpProgressEvent = event as HttpProgressEvent;
+      if(progressEvent.total) {
+        this.downloadProgress = (progressEvent.loaded/progressEvent.total)*100;
+      }
     }
   }
 

@@ -18,10 +18,12 @@ export class EphemeralStorageService extends StorageService {
 
     async getResource(resId: ResourceIdentifier): Promise<ResourceFetchable> {
         try {
+            const stats = await fs.promises.stat(this.getResourcePath(resId.uuid));
             const readStream = fs.createReadStream(this.getResourcePath(resId.uuid));
             return {
                 found: true,
-                resource: readStream
+                length: stats.size,
+                readStream: readStream
             };
         } catch(err) {
             console.error(`[Ephemeral] Resource ${resId.uuid} could not be read: ${err}`);

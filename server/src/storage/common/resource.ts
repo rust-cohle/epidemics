@@ -21,5 +21,6 @@ export interface ResourceMetadata {
 
 export interface ResourceFetchable {
     found: boolean;
-    resource?: ReadStream;
+    length?: number;
+    readStream?: ReadStream;
 }
