@@ -1,4 +1,4 @@
-import { ISpaceTimeEpidemicsSnapshot } from "@epidemics/engine";
+import { IEpidemicsSnapshot } from "@epidemics/engine";
 
 export enum ComputationEvent {
     Start = "Start",
@@ -18,7 +18,7 @@ export interface IComputationProgress {
         percent: number;
         etaInMs: number;
     },
-    epidemics: ISpaceTimeEpidemicsSnapshot
+    epidemics: IEpidemicsSnapshot[]
 }
 
 export interface IComputationProgressEvent<T> {

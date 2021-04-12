@@ -1,4 +1,4 @@
-import { EpidemicsWorldConfig, generateEpidemicsWorld, ISpaceTimeRecord, ISpaceTimeSnapshot } from "@epidemics/engine";
+import { EpidemicsWorldConfig, generateEpidemicsWorld, IEpidemicsSnapshot, ISpaceTimeRecord, ISpaceTimeEpidemicsRecord, ISpaceTimeSnapshot } from "@epidemics/engine";
 import { Observable } from "rxjs";
 import { IPrecomputeConfig } from "../../common/precompute-config";
 import { ComputationEvent, IComputationProgressEvent } from "../common/computation-event";
@@ -42,12 +42,15 @@ export function epidemicsComputation$(config: IPrecomputeConfig & EpidemicsWorld
         let computationTime = computationStart;
 
         const EMIT_PROGRESS_EVERY_FRAMES = 50;
+        const epidemicsSnapshots: IEpidemicsSnapshot[] = [];
         for (let i = 0; i < numberOfFrames; i++) {
             // Epidemics snapshot must be computed everytime (getter) since it's calculated based from previous value
+            world.updateEpidemicsSnapshot();
             const epidemicsSnapshot = world.epidemicsSnapshot;
 
             // Everytime we need a global snapshot (config), send it to UI
             if (i > 0 && i % EMIT_PROGRESS_EVERY_FRAMES === 0) {
+                epidemicsSnapshots.push(epidemicsSnapshot);
                 computationTime = Date.now();
 
                 const ellapsed = computationTime - computationStart;
@@ -63,7 +66,7 @@ export function epidemicsComputation$(config: IPrecomputeConfig & EpidemicsWorld
                             percent: Math.round((i / numberOfFrames) * 100),
                             etaInMs: (numberOfFrames * ellapsed) / i
                         },
-                        epidemics: epidemicsSnapshot
+                        epidemics: epidemicsSnapshots
                     }
                 });
             }
@@ -72,14 +75,15 @@ export function epidemicsComputation$(config: IPrecomputeConfig & EpidemicsWorld
             snapshots.push(world.snapshot);
         }
 
-        const record: ISpaceTimeRecord = {
+        const record: ISpaceTimeEpidemicsRecord = {
             metadata: {
                 fps,
                 fpms,
                 duration,
                 unitInMs
             },
-            snapshots
+            snapshots,
+            epidemics: epidemicsSnapshots
         };
 
         observer.next({

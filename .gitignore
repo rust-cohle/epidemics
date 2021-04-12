@@ -2,4 +2,5 @@
 **/node_modules
 **/*.tar
 server/resources/storage/**/*
+server/python/env
 !server/resources/storage/.gitkeep

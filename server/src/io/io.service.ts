@@ -1,12 +1,14 @@
+import * as path from "path";
 import * as http from "http";
 import { Server as IoServer, Socket } from "socket.io";
-import { ISpaceTimeRecord } from "@epidemics/engine";
+import { ISpaceTimeEpidemicsRecord, ISpaceTimeRecord } from "@epidemics/engine";
 import { interval } from "rxjs";
 import { EphemeralStorageService } from "../storage";
 import { ComputationEvent, IComputationProgressEvent } from "../simulators/common/computation-event";
 import { forkEpidemicsProcess$ } from "../simulators/epidemics/epidemics-precompute";
 import { ResourceCreated } from "../storage/common/resource";
-import { ClientsService } from "src/clients/clients.service";
+import { ClientsService } from "../clients/clients.service";
+import { generateGraph } from "../python-connectors";
 
 const constants = {
     MAX_CONCCURRENT_COMPUTATIONS: 4,
@@ -170,15 +172,15 @@ export class SocketService {
         console.log(`[Socket] [Computation] Starting with options: ${JSON.stringify(data)}.`);
         perClientComputations.onGoing += 1;
 
-        forkEpidemicsProcess$(data).subscribe(async (computationEvent: IComputationProgressEvent<ISpaceTimeRecord>) => {
+        forkEpidemicsProcess$(data).subscribe(async (computationEvent: IComputationProgressEvent<ISpaceTimeEpidemicsRecord>) => {
             if(computationEvent.type === ComputationEvent.Progressing) {
                 socket.emit("computationProgressEvent", JSON.stringify(computationEvent));
-                try {
-                    // const graphPath = await generateGraph(computationEvent.progress.epidemics.counts.current);
-                    // console.log(graphPath);
-                } catch(err) {
-                    console.error("[Socket] [Computation] Failed to create a graph: ", err);
-                }
+                // try {
+                //     const graphPath = await generateGraph(computationEvent.progress.epidemics);
+                //     console.log(graphPath);
+                // } catch(err) {
+                //     console.error("[Socket] [Computation] Failed to create a graph: ", err);
+                // }
             }
 
             if(computationEvent.type === ComputationEvent.Complete) {
@@ -201,6 +203,15 @@ export class SocketService {
                     perClientComputations.onGoing -= 1;
                     this.computations.total -= 1;
                     return;
+                }
+
+                let isGraphGenerated = false;
+                try {
+                    const graphResource = this.ephemeralStorage.createDelegatedResource("image/png");
+                    const graphPath = path.join(this.ephemeralStorage.storageLocation, graphResource.resource.uuid);
+                    isGraphGenerated = await generateGraph(graphPath, computationEvent.payload.epidemics);
+                } catch (err) {
+                    console.error("[Socket] [Computation] Failed to create a graph: ", err);
                 }
 
                 const resourceComputedEvent: IComputationProgressEvent<ResourceCreated> = {

@@ -4,7 +4,7 @@ import { NumberVector2D } from '../../../mathematics/vector';
 import { EpidemicsLaw } from '../../laws/epidemics-law';
 import { GravityLaw2D } from '../../laws/gravity-law';
 import { LineRebound2D } from '../../laws/line-rebound-law';
-import { ISpaceTimeEpidemicsSnapshot, SpaceTimeTwoDimensions } from "../../space-time/space-time";
+import { IEpidemicsSnapshot, SpaceTimeTwoDimensions } from "../../space-time/space-time";
 import { TwoDimensionsSpace } from '../../space/two-dimensions-space';
 import { numberToMeters } from '../../units/conversion';
 import { PersonEpidemicsState } from '../abstract-physical-object';
@@ -24,22 +24,13 @@ export function generateEpidemicsWorld(config: EpidemicsWorldConfig): SpaceTimeT
     //     console.log(`theta=${randomAngle}; rotated=${randomVelocity.x.toFixed(2)}, ${randomVelocity.y.toFixed(2)}; norm=${randomVelocity.norm().toFixed(2)}`);
     // }
     
-    const initialEpidemicsSnapshot: ISpaceTimeEpidemicsSnapshot = {
+    const initialEpidemicsSnapshot: IEpidemicsSnapshot = {
         counts: {
-            current: {
-                "N": 0,
-                "D": 0,
-                "Im": 0,
-                "C": 0,
-                "In": 0,
-            },
-            accumulated: {
-                "N": 0,
-                "D": 0,
-                "Im": 0,
-                "C": 0,
-                "In": 0,
-            }
+            "N": 0,
+            "D": 0,
+            "Im": 0,
+            "C": 0,
+            "In": 0,
         }
     };
 
@@ -55,11 +46,9 @@ export function generateEpidemicsWorld(config: EpidemicsWorldConfig): SpaceTimeT
             });
 
             if(person.epidemicsState === PersonEpidemicsState.Normal) {
-                initialEpidemicsSnapshot.counts.current.N += 1;
-                initialEpidemicsSnapshot.counts.accumulated.N += 1;
+                initialEpidemicsSnapshot.counts.N += 1;
             } else if (person.epidemicsState === PersonEpidemicsState.Contagious) {
-                initialEpidemicsSnapshot.counts.current.C += 1;
-                initialEpidemicsSnapshot.counts.accumulated.C += 1;
+                initialEpidemicsSnapshot.counts.C += 1;
             }
 
             return person; 
@@ -107,7 +96,7 @@ export function generateEpidemicsWorld(config: EpidemicsWorldConfig): SpaceTimeT
         ],
     });
 
-    world.initialEpidemicsSnapshot = initialEpidemicsSnapshot;
+    world.epidemicsSnapshot = initialEpidemicsSnapshot;
 
     return world;
 }

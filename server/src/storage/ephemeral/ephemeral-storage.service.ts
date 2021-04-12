@@ -73,6 +73,17 @@ export class EphemeralStorageService extends StorageService {
         });
     }
 
+    createDelegatedResource(contentType: string): ResourceCreated {
+        return {
+            created: false,
+            resource: {
+                uuid: uuidv4(),
+                creationTime: Date.now(),
+                contentType
+            }
+        }
+    }
+
     periodicResourcesCleanup() {
         interval(this.config.constants.CHECK_CLEAN_RESOURCES).subscribe(() => {
             fs.readdir(this.config.location, (err, files) => {
@@ -89,7 +100,7 @@ export class EphemeralStorageService extends StorageService {
                             return;
                         }
 
-                        const extRegex = `\.${path.extname(file)}$`;
+                        const extRegex = new RegExp(`${path.extname(file)}$`);
                         const fileWithoutExt = file.replace(extRegex, "");
                         if (!uuidlib.validate(fileWithoutExt)) {
                             return;

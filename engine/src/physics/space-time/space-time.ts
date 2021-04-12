@@ -22,11 +22,8 @@ export interface ISpaceTimeSnapshot {
 
 export type IPersonStateCount = { [IPersonState in PersonEpidemicsState]: number };
 
-export interface ISpaceTimeEpidemicsSnapshot  {
-    counts: {
-        current: IPersonStateCount,
-        accumulated: IPersonStateCount
-    }
+export interface IEpidemicsSnapshot  {
+    counts: IPersonStateCount
 }
 
 export interface ISpaceTimeRecord {
@@ -38,6 +35,10 @@ export interface ISpaceTimeRecord {
     },
     snapshots: ISpaceTimeSnapshot[],
     clock?: Clock
+}
+
+export interface ISpaceTimeEpidemicsRecord extends ISpaceTimeRecord {
+    epidemics: IEpidemicsSnapshot[]
 }
 
 export interface SpaceTimeTwoDimensionsConfig {
@@ -53,28 +54,19 @@ export class SpaceTimeTwoDimensions implements ISpaceTime {
     private _objects: AbstractPhysicalObject[];
     private _laws: AbstractPhysicalLaw[];
     private _isRunning: boolean = false;
-    private _initialEpidemicsSnapshot: ISpaceTimeEpidemicsSnapshot;
+    private _epidemicsSnapshot: IEpidemicsSnapshot;
 
     constructor(private _config: SpaceTimeTwoDimensionsConfig) {
         this._space = this._config.space;
         this._objects = this._config.objects.map(obj => obj.clone());
         this._laws = this._config.laws;
-        this._initialEpidemicsSnapshot = {
+        this._epidemicsSnapshot = {
             counts: {
-                current: {
-                    "N": 0,
-                    "D": 0,
-                    "Im": 0,
-                    "C": 0,
-                    "In": 0,
-                },
-                accumulated: {
-                    "N": 0,
-                    "D": 0,
-                    "Im": 0,
-                    "C": 0,
-                    "In": 0,
-                }
+                "N": 0,
+                "D": 0,
+                "Im": 0,
+                "C": 0,
+                "In": 0,
             }
         };
     }
@@ -125,8 +117,8 @@ export class SpaceTimeTwoDimensions implements ISpaceTime {
         };
     }
 
-    get epidemicsSnapshot(): ISpaceTimeEpidemicsSnapshot {
-        const snapshot: ISpaceTimeEpidemicsSnapshot = this.objects.reduce((acc, object) => {
+    updateEpidemicsSnapshot(): void {
+        const counts: IPersonStateCount = this.objects.reduce((acc, object) => {
             if (object.type !== PhysicalObjectType.Person) {
                 return acc;
             }
@@ -139,10 +131,9 @@ export class SpaceTimeTwoDimensions implements ISpaceTime {
                 case PersonEpidemicsState.Normal + PersonEpidemicsState.Normal:
                     // No change in state
                     break;
-                case PersonEpidemicsState.Normal + PersonEpidemicsState.Contagious:
-                    acc.counts.current.N -= 1;
-                    acc.counts.current.C += 1;
-                    acc.counts.accumulated.C += 1;
+                case PersonEpidemicsState.Normal + PersonEpidemicsState.Contagious:  
+                    acc.N -= 1;
+                    acc.C += 1;
                     break;
                 // case PersonEpidemicsState.Infected:
                 //     break;
@@ -158,17 +149,17 @@ export class SpaceTimeTwoDimensions implements ISpaceTime {
             }
 
             return acc;
-        }, this.initialEpidemicsSnapshot);
+        }, {...this._epidemicsSnapshot.counts});
 
-        return snapshot;
+        this._epidemicsSnapshot = { counts };
     }
 
-    get initialEpidemicsSnapshot(): ISpaceTimeEpidemicsSnapshot {
-        return {...this._initialEpidemicsSnapshot};
+    get epidemicsSnapshot(): IEpidemicsSnapshot {
+        return this._epidemicsSnapshot;
     }
 
-    set initialEpidemicsSnapshot(epidemicsSnapshot: ISpaceTimeEpidemicsSnapshot) {
-        this._initialEpidemicsSnapshot = epidemicsSnapshot;
+    set epidemicsSnapshot(epidemicsSnapshot: IEpidemicsSnapshot) {
+        this._epidemicsSnapshot = epidemicsSnapshot;
     }
 
     start(timestamp: number): void {
