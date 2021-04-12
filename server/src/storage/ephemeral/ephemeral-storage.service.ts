@@ -1,7 +1,9 @@
+import * as path from "path";
 import * as fs from "fs";
 import { StorageConfig, StorageService } from "../common";
 import { EphemeralResource, ResourceCreated, ResourceFetchable, ResourceIdentifier, ResourceMetadata } from "../common/resource";
 import { v4 as uuidv4 } from "uuid";
+import * as uuidlib from "uuid";
 import { Readable } from "stream";
 import { interval } from "rxjs";
 
@@ -84,6 +86,12 @@ export class EphemeralStorageService extends StorageService {
                     fs.stat(uuidPath, (err, stats) => {
                         if (err) {
                             console.error(`[Ephemeral] Failed to read resource stats ${file}.`, err);
+                            return;
+                        }
+
+                        const extRegex = `\.${path.extname(file)}$`;
+                        const fileWithoutExt = file.replace(extRegex, "");
+                        if (!uuidlib.validate(fileWithoutExt)) {
                             return;
                         }
 

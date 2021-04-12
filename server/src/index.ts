@@ -7,8 +7,8 @@ import { EphemeralStorageService } from "./storage";
 
 const ephemeralStorage = new EphemeralStorageService({
     constants: {
-        CHECK_CLEAN_RESOURCES: 20000, // 10s
-        MAX_RESOURCE_LIFESPAN: 120000, // 2 minutes
+        CHECK_CLEAN_RESOURCES: 5000, // 10s
+        MAX_RESOURCE_LIFESPAN: 10000, // 2 minutes
     },
     location: path.resolve(rootPath, "../resources/storage")
 });

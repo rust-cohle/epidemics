@@ -1,4 +1,5 @@
 **/dist/
 **/node_modules
 **/*.tar
-server/resources/storage/
+server/resources/storage/**/*
+!server/resources/storage/.gitkeep
